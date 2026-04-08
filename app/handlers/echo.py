@@ -7,3 +7,4 @@ router = Router()
 @router.message()
 async def echoHandler(message: Message):
     await message.answer(UserService.getEchoText(message.text))
+    print(f"My id: {message.from_user.id}")

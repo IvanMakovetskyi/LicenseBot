@@ -12,7 +12,6 @@ async def documentHandler(message: Message, bot: Bot):
 
     file_id = document.file_id
     file_name = document.file_name
-    file_size = document.file_size
 
     await message.answer(f"Recieved file: {file_name}")
 
