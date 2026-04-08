@@ -4,8 +4,18 @@ from aiogram.types import Message
 from services.userService import UserService
 from keyboards.mainKeyboard import mainKeyboard
 
+from repositories.caseRepository import getCase, createCase
+
 router = Router()
 
 @router.message(Command("start"))
 async def startHandler(message: Message):
-    await message.answer(UserService.getStartText(), reply_markup=mainKeyboard)
+    chatId = message.chat.id
+
+    case = getCase(chatId)
+
+    if case is None:
+        createCase(chatId, "CA", "new")
+        await message.answer("Case created.")
+    else:
+        await message.answer("Case already exists.")

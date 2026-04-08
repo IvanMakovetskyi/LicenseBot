@@ -2,8 +2,11 @@ import asyncio
 from config import settings
 from aiogram import Bot, Dispatcher
 from handlers.setupRouters import setupRouters
+from database.db import initDb
 
 async def main():
+    initDb()
+
     bot = Bot(token=settings.TOKEN)
     dp = Dispatcher()
 
