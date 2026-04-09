@@ -1,7 +1,7 @@
-from database.db import getConection
+from database.db import getConnection
 
 def getCase(chatId: int):
-    conn = getConection()
+    conn = getConnection()
     cursor = conn.cursor()
 
     cursor.execute(
@@ -14,7 +14,7 @@ def getCase(chatId: int):
     return case
 
 def createCase(chatId: int, usState: str, status: str = "new"):
-    conn = getConection()
+    conn = getConnection()
     cursor = conn.cursor()
 
     cursor.execute(
