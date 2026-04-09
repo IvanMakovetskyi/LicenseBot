@@ -13,13 +13,38 @@ def getCase(chatId: int):
     conn.close()
     return case
 
-def createCase(chatId: int, usState: str, status: str = "new"):
+def getCaseById(caseId: int):
     conn = getConnection()
     cursor = conn.cursor()
 
     cursor.execute(
-        "INSERT INTO cases (chat_id, us_state, status) VALUES (?, ?, ?)",
-        (chatId, usState, status)
+        "SELECT * FROM cases WHERE id = ?",
+        (caseId,)
+    )
+
+    case = cursor.fetchone()
+    conn.close()
+    return case
+
+def getAllCases():
+    conn = getConnection()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        "SELECT * FROM cases ORDER BY id DESC"
+    )
+
+    cases = cursor.fetchall()
+    conn.close()
+    return cases
+
+def createCase(chatId: int, full_name: str, usState: str, status: str = "new"):
+    conn = getConnection()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        "INSERT INTO cases (chat_id, full_name, us_state, status) VALUES (?, ?, ?, ?)",
+        (chatId, full_name, usState, status)
     )
 
     conn.commit()

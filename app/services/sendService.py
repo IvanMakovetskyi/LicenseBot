@@ -18,7 +18,7 @@ def resolveMessage(messageKey: str, stateCode: str | None = None) -> dict:
         "placeholders": messageData.get("placeholders", []),
     }
 
-def getAvailiableMessages(stateCode: str) -> list[str]:
+def getAvailableMessages(stateCode: str) -> list[str]:
     return STATE_MESSAGE_MAP[stateCode] + ADDITIONAL_MESSAGES
 
 def getMessageLabel(messageKey: str) -> str:

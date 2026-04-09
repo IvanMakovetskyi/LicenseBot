@@ -7,8 +7,8 @@ def clientKeyboard(clients) -> InlineKeyboardMarkup:
 
     for client in clients:
         builder.button(
-            text=f"{client.fullName} ({client.state})",
-            callback_data=f"send_client:{client.id}"
+            text=f'{client["full_name"]} ({client["us_state"]})',
+            callback_data=f'send_client:{client["id"]}',
         )
 
     builder.adjust(1)

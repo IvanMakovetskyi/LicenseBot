@@ -2,6 +2,7 @@ from aiogram import Router, F, Bot
 from aiogram.filters import Command
 from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.context import FSMContext
+from config import settings
 
 from states.adminSendState import AdminSendState
 from keyboards.sendKeyboard import (
@@ -10,17 +11,13 @@ from keyboards.sendKeyboard import (
     confirmKeyboard,
 )
 from services.sendService import resolveMessage, getAvailableMessages
+from services.clientService import clientService
 
 
 router = Router()
 
-ADMIN_IDS = {
-    123456789,  # replace with real admin ids
-}
-
-
 def isAdmin(userId: int) -> bool:
-    return userId in ADMIN_IDS
+    return userId in settings.ADMINS
 
 
 @router.message(Command("send"))
@@ -64,19 +61,19 @@ async def chooseClient(callback: CallbackQuery, state: FSMContext):
         return
 
     await state.update_data(
-        clientId=client.id,
-        clientName=client.fullName,
-        clientChatId=client.clientChatId,
-        stateCode=client.state,
+        clientId=client["id"],
+        clientName=client["full_name"],
+        clientChatId=client["chat_id"],
+        stateCode=client["us_state"],
     )
 
-    messageKeys = getAvailableMessages(client.state)
+    messageKeys = getAvailableMessages(client["us_state"])
 
     await state.set_state(AdminSendState.choosingMessage)
 
     await callback.message.edit_text(
-        f"Client: {client.fullName}\n"
-        f"State: {client.state}\n\n"
+        f"Client: {client["full_Name"]}\n"
+        f"State: {client["us_state"]}\n\n"
         f"Choose message:",
         reply_markup=messageKeyboard(messageKeys),
     )

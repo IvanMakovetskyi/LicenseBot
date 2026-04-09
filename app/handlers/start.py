@@ -13,7 +13,7 @@ async def startHandler(message: Message):
     case = getCase(chatId)
 
     if case is None:
-        createCase(chatId, "CA", "new")
+        createCase(chatId, "name"+str(chatId), "CA", "new")
         await message.answer("Case created.")
     else:
         await message.answer("Case already exists.")
