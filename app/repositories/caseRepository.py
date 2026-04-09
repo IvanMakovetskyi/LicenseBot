@@ -49,3 +49,15 @@ def createCase(chatId: int, full_name: str, usState: str, status: str = "new"):
 
     conn.commit()
     conn.close()
+
+def updateCaseStatus(caseId: int, status: str):
+    conn = getConnection()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        "UPDATE cases SET status = ? WHERE id = ?",
+        (status, caseId)
+    )
+
+    conn.commit()
+    conn.close()

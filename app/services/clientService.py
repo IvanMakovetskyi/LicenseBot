@@ -1,4 +1,9 @@
-from repositories.caseRepository import getAllCases, getCase, getCaseById
+from repositories.caseRepository import (
+    getAllCases,
+    getCase,
+    getCaseById,
+    updateCaseStatus
+)
 
 class ClientService:
     @staticmethod
@@ -12,6 +17,10 @@ class ClientService:
     @staticmethod
     async def getClientByChatId(chatId: int):
         return getCase(chatId)
+
+    @staticmethod
+    async def updateStatus(clientId: int, status: str):
+        updateCaseStatus(clientId, status)
 
 
 clientService = ClientService()

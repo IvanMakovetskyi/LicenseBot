@@ -72,7 +72,7 @@ async def chooseClient(callback: CallbackQuery, state: FSMContext):
     await state.set_state(AdminSendState.choosingMessage)
 
     await callback.message.edit_text(
-        f"Client: {client["full_Name"]}\n"
+        f"Client: {client["full_name"]}\n"
         f"State: {client["us_state"]}\n\n"
         f"Choose message:",
         reply_markup=messageKeyboard(messageKeys),
@@ -192,9 +192,11 @@ async def confirmSend(
 
     data = await state.get_data()
 
+    clientId = data.get("clientId")
     clientChatId = data.get("clientChatId")
     finalText = data.get("finalText")
     clientName = data.get("clientName", "Unknown client")
+    messageKey = data.get("messageKey")
 
     if not clientChatId or not finalText:
         await callback.answer("Missing data for sending.", show_alert=True)
@@ -202,6 +204,12 @@ async def confirmSend(
         return
 
     await bot.send_message(chat_id=clientChatId, text=finalText)
+
+    if messageKey == "payment":
+        await clientService.updateStatus(clientId, "in_progress")
+
+    if messageKey == "congratulations":
+        await clientService.updateStatus(clientId, "done")
 
     await callback.message.edit_text(
         f"Message sent to {clientName}."
