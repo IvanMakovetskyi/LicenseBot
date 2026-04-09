@@ -1,4 +1,4 @@
-MESSAGE_MAP = {
+STATE_MESSAGE_MAP = {
     "CA": [
         "welcome",
         "payment",
@@ -42,10 +42,10 @@ MESSAGE_MAP = {
         "documents_ready",
         "review",
     ],
-
-    "ADDITIONAL_MESSAGES": [
-        "ready_for_payment",
-        "thanks_for_information",
-        "successfully_received"
-    ]
 }
+
+ADDITIONAL_MESSAGES = [
+    "ready_for_payment",
+    "thanks_for_information",
+    "successfully_received"
+]

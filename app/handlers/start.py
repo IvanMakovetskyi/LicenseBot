@@ -1,8 +1,6 @@
 from aiogram import Router
 from aiogram.filters import Command
 from aiogram.types import Message
-from services.userService import UserService
-from keyboards.mainKeyboard import mainKeyboard
 
 from repositories.caseRepository import getCase, createCase
 
