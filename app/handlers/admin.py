@@ -10,11 +10,10 @@ router = Router()
 @router.message(Command("admin"))
 async def admiPanel(message: Message):
     if message.from_user.id not in settings.ADMINS:
-        await message.answer("You are not admin.")
+        await message.answer("У вас нет админ прав")
         return
 
-    print(f"Id in AdminPanel: {message.from_user.id}")
-    await message.answer("Admin panel", reply_markup=adminKeyboard)
+    await message.answer("Админ панель:", reply_markup=adminKeyboard)
 
 @router.callback_query(F.data == "admin_clients")
 async def adminClients(callback: CallbackQuery):
@@ -22,11 +21,11 @@ async def adminClients(callback: CallbackQuery):
     clients = await clientService.getAllClients()
 
     if not clients:
-        await callback.message.answer("No clients found.")
+        await callback.message.answer("Клиенты не найдены")
         await callback.answer()
         return
 
-    text = "Clients:\n\n"
+    text = "Клиенты:\n\n"
 
     for i, client in enumerate(clients, start=1):
         text += (

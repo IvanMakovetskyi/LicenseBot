@@ -28,7 +28,7 @@ def messageKeyboard(messageKeys: list[str]) -> InlineKeyboardMarkup:
 
 def confirmKeyboard() -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
-    builder.button(text="Send", callback_data="send_confirm")
-    builder.button(text="Cancel", callback_data="send_cancel")
+    builder.button(text="Отправить", callback_data="send_confirm")
+    builder.button(text="Отмена", callback_data="send_cancel")
     builder.adjust(2)
     return builder.as_markup()

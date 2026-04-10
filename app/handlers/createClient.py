@@ -18,7 +18,7 @@ async def adminCreateClient(callback: CallbackQuery, state: FSMContext):
         return
 
     if callback.message.chat.type == "private":
-        await callback.message.answer("Open admin panel in chat with client.")
+        await callback.message.answer("Откройте админ панель в чате с клиентом")
         await callback.answer()
         return
     
@@ -28,10 +28,10 @@ async def adminCreateClient(callback: CallbackQuery, state: FSMContext):
 
     if existingClient:
         await callback.message.answer(
-            f"Client already exists:\n\n"
+            f"Клиент уже есть в базе:\n\n"
             f"{existingClient['full_name']}\n"
-            f"State: {existingClient['us_state']}\n"
-            f"Status: {existingClient['status']}"
+            f"Штат: {existingClient['us_state']}\n"
+            f"Статус: {existingClient['status']}"
         )
         await callback.answer()
         return
@@ -40,7 +40,7 @@ async def adminCreateClient(callback: CallbackQuery, state: FSMContext):
     await state.update_data(chatId=callback.message.chat.id)
     await state.set_state(CreateClientState.waitingFullName)
 
-    await callback.message.answer("Enter client's full name:")
+    await callback.message.answer("Введите полное имя клиента:")
     await callback.answer()
 
 @router.message(CreateClientState.waitingFullName)
@@ -50,7 +50,7 @@ async def getFullName(message: Message, state: FSMContext):
 
     await state.update_data(fullName=message.text.strip())
     await state.set_state(CreateClientState.waitingUsState)
-    await message.answer("Enter US state (CA, FL, NY, PA):")
+    await message.answer("Введите штат (CA, FL, NY, PA):")
 
 
 @router.message(CreateClientState.waitingUsState)
@@ -62,7 +62,7 @@ async def getUsState(message: Message, state: FSMContext):
     allowedStates = {"CA", "FL", "NY", "PA"}
 
     if usState not in allowedStates:
-        await message.answer("Invalid state. Enter CA, FL, NY, or PA.")
+        await message.answer("Неверный штат. ВВедите: CA, FL, NY, или PA.")
         return
 
     data = await state.get_data()
@@ -77,9 +77,9 @@ async def getUsState(message: Message, state: FSMContext):
     )
 
     await message.answer(
-        f"Client created:\n\n"
+        f"Клиент создан:\n\n"
         f"{fullName}\n"
-        f"State: {usState}"
+        f"Штат: {usState}"
     )
 
     await state.clear()

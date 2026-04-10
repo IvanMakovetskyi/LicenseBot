@@ -30,20 +30,20 @@ async def openSendInterface(
         return
 
     if message.chat.type != "private":
-        await message.answer("Use /send in private chat with the bot.")
+        await message.answer("Используйте эту команду в приватном чате с ботом.")
         return
 
     clients = await clientService.getAllClients()
 
     if not clients:
-        await message.answer("No clients found.")
+        await message.answer("Клиенты не найдены.")
         return
 
     await state.clear()
     await state.set_state(AdminSendState.choosingClient)
 
     await message.answer(
-        "Choose client:",
+        "Выберите клиента:",
         reply_markup=clientKeyboard(clients),
     )
 
@@ -78,7 +78,7 @@ async def adminSend(callback: CallbackQuery, state: FSMContext):
     client = await clientService.getClientByChatId(callback.message.chat.id)
 
     if not client:
-        await callback.message.answer("Client is not created yet.")
+        await callback.message.answer("Клиент еще не создан.")
         await callback.answer()
         return
 
@@ -95,9 +95,9 @@ async def adminSend(callback: CallbackQuery, state: FSMContext):
     await state.set_state(AdminSendState.choosingMessage)
 
     await callback.message.answer(
-        f"Client: {client['full_name']}\n"
-        f"State: {client['us_state']}\n\n"
-        f"Choose message:",
+        f"Клиент: {client['full_name']}\n"
+        f"Штат: {client['us_state']}\n\n"
+        f"Выберите сообщение:",
         reply_markup=messageKeyboard(messageKeys),
     )
 
@@ -117,7 +117,7 @@ async def chooseClient(callback: CallbackQuery, state: FSMContext):
     client = await clientService.getClientById(clientId)
 
     if not client:
-        await callback.answer("Client not found.", show_alert=True)
+        await callback.answer("Клиент не найден.", show_alert=True)
         return
 
     await state.update_data(
@@ -153,7 +153,7 @@ async def chooseMessage(callback: CallbackQuery, state: FSMContext):
     stateCode = data.get("stateCode")
 
     if not stateCode:
-        await callback.answer("State is missing.", show_alert=True)
+        await callback.answer("Штат упущен.", show_alert=True)
         return
 
     messageKey = callback.data.split(":")[1]
@@ -173,7 +173,7 @@ async def chooseMessage(callback: CallbackQuery, state: FSMContext):
     if placeholders:
         await state.set_state(AdminSendState.fillingPlaceholder)
         await callback.message.edit_text(
-            f"Enter value for: {placeholders[0]}"
+            f"Введите значение для: {placeholders[0]}"
         )
     else:
         await state.update_data(finalText=text)
@@ -199,7 +199,7 @@ async def fillPlaceholder(message: Message, state: FSMContext):
     values = data.get("values", {})
 
     if index >= len(placeholders):
-        await message.answer("Unexpected state. Start again with /send.")
+        await message.answer("Неизвестная ошибка. Пожалуйста попробуйте снова")
         await state.clear()
         return
 
@@ -213,7 +213,7 @@ async def fillPlaceholder(message: Message, state: FSMContext):
             values=values,
             placeholderIndex=index,
         )
-        await message.answer(f"Enter value for: {placeholders[index]}")
+        await message.answer(f"Введите значение для: {placeholders[index]}")
         return
 
     templateText = data["templateText"]
@@ -221,7 +221,7 @@ async def fillPlaceholder(message: Message, state: FSMContext):
     try:
         finalText = templateText.format(**values)
     except KeyError as error:
-        await message.answer(f"Missing placeholder value: {error}")
+        await message.answer(f"Упущено значение для: {error}")
         await state.clear()
         return
 
@@ -259,7 +259,7 @@ async def confirmSend(
     messageKey = data.get("messageKey")
 
     if not clientChatId or not finalText:
-        await callback.answer("Missing data for sending.", show_alert=True)
+        await callback.answer("Недостающие данные для отправки.", show_alert=True)
         await state.clear()
         return
 
@@ -272,7 +272,7 @@ async def confirmSend(
         await clientService.updateStatus(clientId, "done")
 
     await callback.message.edit_text(
-        f"Message sent to {clientName} ✅"
+        f"Сообщение отправлено:  {clientName}  ✅"
     )
     await state.clear()
     await callback.answer()
@@ -285,5 +285,5 @@ async def cancelSend(callback: CallbackQuery, state: FSMContext):
         return
 
     await state.clear()
-    await callback.message.edit_text("Sending canceled.")
+    await callback.message.edit_text("Отправка отменина.")
     await callback.answer()
