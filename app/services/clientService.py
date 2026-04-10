@@ -3,8 +3,10 @@ from repositories.caseRepository import (
     getCase,
     getCaseById,
     updateCaseStatus,
-    createCase
+    createCase,
+    deleteCase
 )
+
 
 class ClientService:
     @staticmethod
@@ -24,8 +26,12 @@ class ClientService:
         updateCaseStatus(clientId, status)
 
     @staticmethod
-    async def createClient(chatId: int, fullName: str, usState: str, status: str):
+    async def createClient(chatId: int, fullName: str, usState: str, status: str = "new"):
         createCase(chatId, fullName, usState, status)
+
+    @staticmethod
+    async def deleteClient(clientId: int):
+        deleteCase(clientId)
 
 
 clientService = ClientService()

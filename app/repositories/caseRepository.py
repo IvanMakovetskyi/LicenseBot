@@ -1,5 +1,6 @@
 from database.db import getConnection
 
+
 def getCase(chatId: int):
     conn = getConnection()
     cursor = conn.cursor()
@@ -12,6 +13,7 @@ def getCase(chatId: int):
     case = cursor.fetchone()
     conn.close()
     return case
+
 
 def getCaseById(caseId: int):
     conn = getConnection()
@@ -26,6 +28,7 @@ def getCaseById(caseId: int):
     conn.close()
     return case
 
+
 def getAllCases():
     conn = getConnection()
     cursor = conn.cursor()
@@ -38,17 +41,32 @@ def getAllCases():
     conn.close()
     return cases
 
-def createCase(chatId: int, full_name: str, usState: str, status: str = "new"):
+
+def createCase(chatId: int, fullName: str, usState: str, status: str = "new"):
     conn = getConnection()
     cursor = conn.cursor()
 
     cursor.execute(
         "INSERT INTO cases (chat_id, full_name, us_state, status) VALUES (?, ?, ?, ?)",
-        (chatId, full_name, usState, status)
+        (chatId, fullName, usState, status)
     )
 
     conn.commit()
     conn.close()
+
+
+def deleteCase(caseId: int):
+    conn = getConnection()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        "DELETE FROM cases WHERE id = ?",
+        (caseId,)
+    )
+
+    conn.commit()
+    conn.close()
+
 
 def updateCaseStatus(caseId: int, status: str):
     conn = getConnection()
