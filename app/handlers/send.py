@@ -16,13 +16,17 @@ from services.clientService import clientService
 
 router = Router()
 
+
 def isAdmin(userId: int) -> bool:
     return userId in settings.ADMINS
 
 
-@router.message(Command("send"))
-async def sendCommand(message: Message, state: FSMContext):
-    if not message.from_user or not isAdmin(message.from_user.id):
+async def openSendInterface(
+    message: Message,
+    state: FSMContext,
+    userId: int,
+):
+    if not isAdmin(userId):
         return
 
     if message.chat.type != "private":
@@ -42,6 +46,62 @@ async def sendCommand(message: Message, state: FSMContext):
         "Choose client:",
         reply_markup=clientKeyboard(clients),
     )
+
+
+@router.message(Command("send"))
+async def sendCommand(message: Message, state: FSMContext):
+    if not message.from_user:
+        return
+
+    await openSendInterface(
+        message=message,
+        state=state,
+        userId=message.from_user.id,
+    )
+
+
+@router.callback_query(F.data == "admin_send")
+async def adminSend(callback: CallbackQuery, state: FSMContext):
+    if not callback.from_user or not isAdmin(callback.from_user.id):
+        await callback.answer()
+        return
+
+    if callback.message.chat.type == "private":
+        await openSendInterface(
+            message=callback.message,
+            state=state,
+            userId=callback.from_user.id,
+        )
+        await callback.answer()
+        return
+
+    client = await clientService.getClientByChatId(callback.message.chat.id)
+
+    if not client:
+        await callback.message.answer("Client is not created yet.")
+        await callback.answer()
+        return
+
+    await state.clear()
+    await state.update_data(
+        clientId=client["id"],
+        clientName=client["full_name"],
+        clientChatId=client["chat_id"],
+        stateCode=client["us_state"],
+    )
+
+    messageKeys = getAvailableMessages(client["us_state"])
+
+    await state.set_state(AdminSendState.choosingMessage)
+
+    await callback.message.answer(
+        f"Client: {client['full_name']}\n"
+        f"State: {client['us_state']}\n\n"
+        f"Choose message:",
+        reply_markup=messageKeyboard(messageKeys),
+    )
+
+    await callback.answer()
 
 
 @router.callback_query(
@@ -72,8 +132,8 @@ async def chooseClient(callback: CallbackQuery, state: FSMContext):
     await state.set_state(AdminSendState.choosingMessage)
 
     await callback.message.edit_text(
-        f"Client: {client["full_name"]}\n"
-        f"State: {client["us_state"]}\n\n"
+        f"Client: {client['full_name']}\n"
+        f"State: {client['us_state']}\n\n"
         f"Choose message:",
         reply_markup=messageKeyboard(messageKeys),
     )
@@ -212,7 +272,7 @@ async def confirmSend(
         await clientService.updateStatus(clientId, "done")
 
     await callback.message.edit_text(
-        f"Message sent to {clientName}."
+        f"Message sent to {clientName} ✅"
     )
     await state.clear()
     await callback.answer()

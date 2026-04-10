@@ -1,0 +1,85 @@
+from aiogram import Router, F
+from aiogram.types import CallbackQuery, Message
+from aiogram.fsm.context import FSMContext
+
+from services.clientService import clientService
+from states.createClientState import CreateClientState
+from config import settings
+
+router = Router()
+
+def isAdmin(userId: int) -> bool:
+    return userId in settings.ADMINS
+
+@router.callback_query(F.data == "admin_create_client")
+async def adminCreateClient(callback: CallbackQuery, state: FSMContext):
+    if not callback.from_user or not isAdmin(callback.from_user.id):
+        await callback.answer()
+        return
+
+    if callback.message.chat.type == "private":
+        await callback.message.answer("Open admin panel in chat with client.")
+        await callback.answer()
+        return
+    
+    chatId = callback.message.chat.id
+
+    existingClient = await clientService.getClientByChatId(chatId)
+
+    if existingClient:
+        await callback.message.answer(
+            f"Client already exists:\n\n"
+            f"{existingClient['full_name']}\n"
+            f"State: {existingClient['us_state']}\n"
+            f"Status: {existingClient['status']}"
+        )
+        await callback.answer()
+        return
+
+    await state.clear()
+    await state.update_data(chatId=callback.message.chat.id)
+    await state.set_state(CreateClientState.waitingFullName)
+
+    await callback.message.answer("Enter client's full name:")
+    await callback.answer()
+
+@router.message(CreateClientState.waitingFullName)
+async def getFullName(message: Message, state: FSMContext):
+    if not message.from_user or not isAdmin(message.from_user.id):
+        return
+
+    await state.update_data(fullName=message.text.strip())
+    await state.set_state(CreateClientState.waitingUsState)
+    await message.answer("Enter US state (CA, FL, NY, PA):")
+
+
+@router.message(CreateClientState.waitingUsState)
+async def getUsState(message: Message, state: FSMContext):
+    if not message.from_user or not isAdmin(message.from_user.id):
+        return
+
+    usState = message.text.strip().upper()
+    allowedStates = {"CA", "FL", "NY", "PA"}
+
+    if usState not in allowedStates:
+        await message.answer("Invalid state. Enter CA, FL, NY, or PA.")
+        return
+
+    data = await state.get_data()
+    chatId = data["chatId"]
+    fullName = data["fullName"]
+
+    await clientService.createClient(
+        chatId=chatId,
+        fullName=fullName,
+        usState=usState,
+        status="new",
+    )
+
+    await message.answer(
+        f"Client created:\n\n"
+        f"{fullName}\n"
+        f"State: {usState}"
+    )
+
+    await state.clear()

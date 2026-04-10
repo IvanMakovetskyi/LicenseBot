@@ -2,7 +2,8 @@ from repositories.caseRepository import (
     getAllCases,
     getCase,
     getCaseById,
-    updateCaseStatus
+    updateCaseStatus,
+    createCase
 )
 
 class ClientService:
@@ -21,6 +22,10 @@ class ClientService:
     @staticmethod
     async def updateStatus(clientId: int, status: str):
         updateCaseStatus(clientId, status)
+
+    @staticmethod
+    async def createClient(chatId: int, fullName: str, usState: str, status: str):
+        createCase(chatId, fullName, usState, status)
 
 
 clientService = ClientService()
