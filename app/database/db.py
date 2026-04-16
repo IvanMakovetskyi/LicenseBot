@@ -6,8 +6,9 @@ DB_PATH = BASE_DIR / "data" / "clients.db"
 
 def getConnection():
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(DB_PATH, check_same_thread=False)
+    conn = sqlite3.connect(DB_PATH, check_same_thread=False, timeout=10)
     conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA journal_mode=WAL;")
     return conn
 
 def initDb():

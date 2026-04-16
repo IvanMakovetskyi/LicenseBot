@@ -9,6 +9,7 @@ router = Router()
 
 @router.message(Command("admin"))
 async def admiPanel(message: Message):
+    print (f"Admin Message from ID: {message.from_user.id}")
     if message.from_user.id not in settings.ADMINS:
         await message.answer("У вас нет админ прав")
         return
