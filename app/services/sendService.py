@@ -5,7 +5,15 @@ def resolveMessage(messageKey: str, stateCode: str | None = None) -> dict:
     messageData = MESSAGES[messageKey]
 
     if "states" in messageData:
-        stateData = messageData["states"][stateCode]
+        statesData = messageData["states"]
+
+        stateData = statesData.get(stateCode) or statesData.get("default")
+
+        if not stateData:
+            raise ValueError(
+                f"Message '{messageKey}' has no template for state '{stateCode}' and no default template."
+            )
+
         return {
             "label": messageData["label"],
             "text": stateData["text"],

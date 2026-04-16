@@ -50,7 +50,7 @@ async def getFullName(message: Message, state: FSMContext):
 
     await state.update_data(fullName=message.text.strip())
     await state.set_state(CreateClientState.waitingUsState)
-    await message.answer("Введите штат (CA, FL, NY, PA):")
+    await message.answer("Введите штат (CA, FL, NY, PA, NC):")
 
 
 @router.message(CreateClientState.waitingUsState)
@@ -59,10 +59,10 @@ async def getUsState(message: Message, state: FSMContext):
         return
 
     usState = message.text.strip().upper()
-    allowedStates = {"CA", "FL", "NY", "PA"}
+    allowedStates = {"CA", "FL", "NY", "PA", "NC"}
 
     if usState not in allowedStates:
-        await message.answer("Неверный штат. ВВедите: CA, FL, NY, или PA.")
+        await message.answer("Неверный штат. ВВедите: CA, FL, NY, PA, или NC.")
         return
 
     data = await state.get_data()
