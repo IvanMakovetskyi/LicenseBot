@@ -9,6 +9,7 @@ STATE_MESSAGE_MAP = {
         "application_completed",
         "bord_message",
         "email_check",
+        "letter_discussed",
         "congratulations",
         "review",
     ],
@@ -47,5 +48,6 @@ STATE_MESSAGE_MAP = {
 ADDITIONAL_MESSAGES = [
     "ready_for_payment",
     "thanks_for_information",
-    "successfully_received"
+    "successfully_received",
+    "transfer_letter"
 ]
