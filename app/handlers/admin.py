@@ -14,7 +14,8 @@ async def admiPanel(message: Message):
         await message.answer("У вас нет админ прав")
         return
 
-    await message.answer("Админ панель:", reply_markup=adminKeyboard)
+    envLabel = " (DEV mode)" if settings.APP_ENV == "dev" else ""
+    await message.answer(f"Админ панель:{envLabel}", reply_markup=adminKeyboard)
 
 @router.callback_query(F.data == "admin_clients")
 async def adminClients(callback: CallbackQuery):
