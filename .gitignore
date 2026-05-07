@@ -5,6 +5,7 @@
 data/*.db
 data/*.db-shm
 data/*.db-wal
+data/clients.sqbpro
 
 # python cache
 __pycache__/
