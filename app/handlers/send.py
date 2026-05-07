@@ -88,6 +88,7 @@ async def adminSend(callback: CallbackQuery, state: FSMContext):
         clientName=client["full_name"],
         clientChatId=client["chat_id"],
         stateCode=client["us_state"],
+        language=client["language"] or "ru",
     )
 
     messageKeys = getAvailableMessages(client["us_state"])
@@ -125,6 +126,7 @@ async def chooseClient(callback: CallbackQuery, state: FSMContext):
         clientName=client["full_name"],
         clientChatId=client["chat_id"],
         stateCode=client["us_state"],
+        language=client["language"] or "ru",
     )
 
     messageKeys = getAvailableMessages(client["us_state"])
@@ -157,7 +159,9 @@ async def chooseMessage(callback: CallbackQuery, state: FSMContext):
         return
 
     messageKey = callback.data.split(":")[1]
-    template = resolveMessage(messageKey, stateCode)
+
+    language = data.get("language", "ru")
+    template = resolveMessage(messageKey, stateCode, language)
 
     text = template["text"]
     placeholders = template.get("placeholders", [])

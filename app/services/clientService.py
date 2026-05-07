@@ -26,8 +26,8 @@ class ClientService:
         updateCaseStatus(clientId, status)
 
     @staticmethod
-    async def createClient(chatId: int, fullName: str, usState: str, status: str = "new"):
-        createCase(chatId, fullName, usState, status)
+    async def createClient(chatId: int, fullName: str, usState: str, language: str = "ru", status: str = "new"):
+        createCase(chatId, fullName, usState, language, status)
 
     @staticmethod
     async def deleteClient(clientId: int):

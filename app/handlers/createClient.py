@@ -65,21 +65,41 @@ async def getUsState(message: Message, state: FSMContext):
         await message.answer("Неверный штат. ВВедите: CA, FL, NY, PA, или NC.")
         return
 
+    await state.update_data(usState=usState)
+    await state.set_state(CreateClientState.waitingLanguage)
+
+    await message.answer(
+        "Выберите язык клиента:\n\n"
+        "ru - русский\n"
+        "en - english"
+    )
+
+@router.message(CreateClientState.waitingLanguage)
+async def getLanguage(message: Message, state: FSMContext):
+    if not message.from_user or not isAdmin(message.from_user.id):
+        return
+
+    language = message.text.strip().lower()
+
+    if language not in {"ru", "en"}:
+        await message.answer("Неверный язык. Введите 'ru' или 'en'.")
+        return
+    
     data = await state.get_data()
-    chatId = data["chatId"]
-    fullName = data["fullName"]
 
     await clientService.createClient(
-        chatId=chatId,
-        fullName=fullName,
-        usState=usState,
-        status="new",
+        chatId=data["chatId"],
+        fullName=data["fullName"],
+        usState=data["usState"],
+        language=language,
+        status="new"
     )
 
     await message.answer(
         f"Клиент создан:\n\n"
-        f"{fullName}\n"
-        f"Штат: {usState}"
+        f"{data['fullName']}\n"
+        f"Штат: {data['usState']}\n"
+        f"Язык: {language}"
     )
 
     await state.clear()
