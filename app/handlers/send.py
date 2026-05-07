@@ -159,7 +159,9 @@ async def chooseMessage(callback: CallbackQuery, state: FSMContext):
         return
 
     messageKey = callback.data.split(":")[1]
-    template = resolveMessage(messageKey, stateCode)
+
+    language = data.get("language", "ru")
+    template = resolveMessage(messageKey, stateCode, language)
 
     text = template["text"]
     placeholders = template.get("placeholders", [])
