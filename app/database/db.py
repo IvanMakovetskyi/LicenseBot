@@ -22,7 +22,8 @@ def initDb():
             chat_id INTEGER UNIQUE,
             full_name TEXT,
             us_state TEXT,
-            status TEXT
+            status TEXT,
+            language TEXT DEFAULT 'ru'
         )
         """
     )

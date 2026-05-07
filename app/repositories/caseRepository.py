@@ -42,13 +42,13 @@ def getAllCases():
     return cases
 
 
-def createCase(chatId: int, fullName: str, usState: str, status: str = "new"):
+def createCase(chatId: int, fullName: str, usState: str, language: str = "ru", status: str = "new"):
     conn = getConnection()
     cursor = conn.cursor()
 
     cursor.execute(
-        "INSERT INTO cases (chat_id, full_name, us_state, status) VALUES (?, ?, ?, ?)",
-        (chatId, fullName, usState, status)
+        "INSERT INTO cases (chat_id, full_name, us_state, language, status) VALUES (?, ?, ?, ?, ?)",
+        (chatId, fullName, usState, language, status)
     )
 
     conn.commit()

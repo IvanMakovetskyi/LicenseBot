@@ -27,12 +27,13 @@ async def adminClients(callback: CallbackQuery):
         await callback.answer()
         return
 
-    text = "Клиенты:\n\n"
+    text = "Клиенты:\n\n Id | Full Name | US State | Language | Status\n"
 
     for i, client in enumerate(clients, start=1):
         text += (
             f"{i}. {client['full_name']} | "
             f"{client['us_state']} | "
+            f"{client['language']} | "
             f"{client['status']}\n"
         )
 
