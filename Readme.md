@@ -1,334 +1,89 @@
-# 🤖 LicenseBot
+# LicenseBot
 
-A **Telegram automation bot** built with **Python and Aiogram** to manage client workflows, automate communication, and simplify administrative tasks.
+Telegram automation bot (Aiogram) for admin-managed client workflows.
 
-LicenseBot allows admins to manage clients and send predefined workflow messages based on the client's **US state and process stage**.
+## Stack
+- Python 3.10+
+- Aiogram 3
+- Neon PostgreSQL (remote)
+- asyncpg
 
----
-
-# ✨ Features
-
-## 👤 Client Management
-- Create new clients
-- View all clients
-- Delete clients
-- Store client information in database
-
-## 📨 Automated Messaging
-- Predefined message templates
-- Organized workflows per **US State**
-- Dynamic placeholders for variables (amount, file number, etc.)
-
-## 🛠 Admin Panel
-Hidden admin interface accessible through command:
-
-```
-/admin
-```
-
-Admin panel allows:
-
-- Viewing clients
-- Sending workflow messages
-- Managing communication
-- Deleting clients
-
----
-
-# 🧠 State-Based Message System
-
-Messages are organized by **US state workflow**.
-
-Example workflow for **California**:
-
-```
-CA
-├ welcome
-├ payment
-├ form
-├ documents_ready
-├ license_approved
-├ board_created
-├ application_completed
-├ board_message
-├ email_check
-├ congratulations
-└ review
-```
-
-Different states may have **different workflows**.
-
----
-
-# 🏗 Project Structure
-
-```
-LicenseBot
-│
-├── app
-│   │
-│   ├── handlers
-│   │   ├── admin.py
-│   │   ├── createClient.py
-│   │   ├── deleteClient.py
-│   │   └── send.py
-│   │
-│   ├── services
-│   │   ├── clientService.py
-│   │   └── sendService.py
-│   │
-│   ├── repositories
-│   │   └── caseRepository.py
-│   │
-│   ├── database
-│   │   └── db.py
-│   │
-│   ├── keyboards
-│   │   ├── adminKeyboard.py
-│   │   ├── deleteKeyboard.py
-│   │   └── sendKeyboard.py
-│   │
-│   ├── messages
-│   │   ├── messageMap.py
-│   │   └── user.py
-│   │
-│   ├── states
-│   │   ├── adminSendState.py
-│   │   └── createClientState.py
-│   │
-│   ├── config.py
-│   └── main.py
-│
-└── requirements.txt
-```
-
----
-
-# ⚙️ Tech Stack
-
-| Technology | Purpose |
-|------------|--------|
-| Python | Main programming language |
-| Aiogram | Telegram bot framework |
-| SQLite | Database |
-| AsyncIO | Asynchronous operations |
-| FSM | User interaction flows |
-
----
-
-# 🚀 Installation
-
-## 1️⃣ Clone Repository
-
+## 1. Install
 ```bash
 git clone https://github.com/yourusername/LicenseBot.git
 cd LicenseBot
-```
-
----
-
-## 2️⃣ Create Virtual Environment
-
-```bash
 python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
 ```
 
-Activate it.
-
-### Windows
-
+Windows activation:
 ```bash
 venv\Scripts\activate
 ```
 
-### Linux / Mac
+## 2. Environment
+Copy `.env.example` to `.env` (or keep `app/.env` if that is your deployment pattern) and set:
+
+```env
+BOT_TOKEN=your_telegram_bot_token
+ADMINS=123456789,987654321
+DATABASE_URL=postgresql://username:password@ep-xxxxx.us-east-2.aws.neon.tech/neondb?sslmode=require
+APP_ENV=prod
+```
+
+Notes:
+- `BOT_TOKEN` is preferred, `TOKEN` is still accepted for backward compatibility.
+- Startup fails with a clear error if `DATABASE_URL` or other required vars are missing.
+
+## 3. Create Neon Database
+1. Create a project in [Neon](https://neon.tech).
+2. Create or select a database.
+3. Copy the connection string from Neon dashboard.
+4. Put it into `DATABASE_URL` in `.env` (keep `sslmode=require`).
+
+## 4. Initialize and Verify Neon Connection
+Run:
 
 ```bash
-source venv/bin/activate
+python scripts/test_neon_connection.py
 ```
 
----
+This script verifies:
+- Neon connection works
+- required table exists (`clients`)
+- insert/read/update/delete flow works
 
-## 3️⃣ Install Dependencies
+## 5. Migrate Existing SQLite Data (Optional, one-time)
+If `data/clients.db` exists:
 
 ```bash
-pip install -r requirements.txt
+python scripts/migrate_sqlite_to_neon.py
 ```
 
----
+Behavior:
+- Reads all rows from SQLite `cases`
+- Inserts into Neon `clients`
+- Skips duplicates by `chat_id`
+- Prints migrated/skipped counters
 
-## 4️⃣ Configure Bot
+It does not delete local SQLite files and is not auto-run by the bot.
 
-Open:
-
-```
-app/config.py
-```
-
-Add your Telegram bot token and admin IDs.
-
-Example:
-
-```python
-BOT_TOKEN = "your_bot_token"
-
-ADMINS = [
-    123456789
-]
-```
-
----
-
-## 5️⃣ Run the Bot
-
+## 6. Run Bot
 ```bash
 python app/main.py
 ```
 
-Bot should now be running.
+At startup, bot runs idempotent DB init (`CREATE TABLE IF NOT EXISTS`) and keeps existing Neon data.
+It also seeds message templates/flows into DB if missing and then uses DB templates at runtime.
 
----
-
-# 🧩 Example Workflow
-
-### Create Client
-
-Admin command:
-
-```
-/create_client
-```
-
-Bot asks for:
-
-```
-Full name
-US State
-```
-
-Client is saved in database.
-
----
-
-### Send Workflow Message
-
-Admin command:
-
-```
-/send
-```
-
-Flow:
-
-```
-Choose state
-Choose message type
-Choose client
-```
-
-Bot sends predefined template automatically.
-
----
-
-# 🗂 Message Templates
-
-Templates are stored in:
-
-```
-app/messages/user.py
-```
-
-Example template:
-
-```python
-PAYMENT = """
-Отправляю вам данные для оплаты по Zelle.
-
-Оплата первого платежа {amount}$
-
-Вместо номера телефона вводите yulia87andreeva@gmail.com
-
-Бизнес название Andreev life LLC
-
-После оплаты пришлите скриншот
-"""
-```
-
-Dynamic placeholders:
-
-```
-{amount}
-{file_number}
-{name}
-```
-
----
-
-# 🧑‍💻 Admin Commands
-
-| Command | Description |
-|-------|-------------|
-| `/admin` | Open admin panel |
-| `/send` | Send workflow message |
-| `/create_client` | Create client |
-| `/delete_client` | Delete client |
-
----
-
-# ☁️ Deployment
-
-The bot can run on any server:
-
-- Oracle Cloud Free Tier
-- Railway
-- AWS
-- DigitalOcean
-- VPS
+## 7. Deployment (Oracle Ubuntu / VPS)
+Recommended:
+- Store secrets in environment or `.env`
+- Run with `systemd` or Docker
+- Keep outbound access to Neon endpoint (TLS)
 
 Example background run:
-
 ```bash
-nohup python app/main.py &
+nohup python app/main.py > bot.log 2>&1 &
 ```
-
-Production deployments should use:
-
-- `systemd`
-- `Docker`
-- `PM2`
-
----
-
-# 🔒 Security Recommendations
-
-For production environments:
-
-- Use `.env` for secrets
-- Restrict admin access
-- Enable logging
-- Switch SQLite to PostgreSQL
-- Add error monitoring
-
----
-
-# 📈 Future Improvements
-
-Planned features:
-
-- Web admin dashboard
-- Client portal
-- Message scheduling
-- Payment integrations
-- CRM functionality
-- Analytics dashboard
-
----
-
-# 📜 License
-
-GNU GENERAL PUBLIC LICENSE
-Version 3, 29 June 2007
-
-# 👨‍💻 Author
-
-Developed by **Ivan Makovetskyi**
