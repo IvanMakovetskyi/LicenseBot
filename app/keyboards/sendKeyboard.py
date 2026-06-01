@@ -1,6 +1,5 @@
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.types import InlineKeyboardMarkup
-from services.sendService import getMessageLabel
 
 def clientKeyboard(clients) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
@@ -14,13 +13,17 @@ def clientKeyboard(clients) -> InlineKeyboardMarkup:
     builder.adjust(1)
     return builder.as_markup()
 
-def messageKeyboard(messageKeys: list[str]) -> InlineKeyboardMarkup:
+def messageKeyboard(messages: list[dict]) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
 
-    for key in messageKeys:
+    for item in messages:
+        label = item["label"]
+        if item.get("is_last"):
+            label = f"{label} (last)"
+
         builder.button(
-            text=getMessageLabel(key),
-            callback_data=f"send_message:{key}"
+            text=label,
+            callback_data=f"send_message:{item['key']}"
         )
 
     builder.adjust(1)

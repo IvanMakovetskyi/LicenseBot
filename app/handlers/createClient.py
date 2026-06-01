@@ -16,6 +16,9 @@ async def adminCreateClient(callback: CallbackQuery, state: FSMContext):
     if not callback.from_user or not isAdmin(callback.from_user.id):
         await callback.answer()
         return
+    if not callback.message:
+        await callback.answer()
+        return
 
     if callback.message.chat.type == "private":
         await callback.message.answer("Откройте админ панель в чате с клиентом")
@@ -47,6 +50,9 @@ async def adminCreateClient(callback: CallbackQuery, state: FSMContext):
 async def getFullName(message: Message, state: FSMContext):
     if not message.from_user or not isAdmin(message.from_user.id):
         return
+    if not message.text:
+        await message.answer("Введите текстовое имя клиента.")
+        return
 
     await state.update_data(fullName=message.text.strip())
     await state.set_state(CreateClientState.waitingUsState)
@@ -56,6 +62,9 @@ async def getFullName(message: Message, state: FSMContext):
 @router.message(CreateClientState.waitingUsState)
 async def getUsState(message: Message, state: FSMContext):
     if not message.from_user or not isAdmin(message.from_user.id):
+        return
+    if not message.text:
+        await message.answer("Введите штат текстом: CA, FL, NY, PA или NC.")
         return
 
     usState = message.text.strip().upper()
@@ -77,6 +86,9 @@ async def getUsState(message: Message, state: FSMContext):
 @router.message(CreateClientState.waitingLanguage)
 async def getLanguage(message: Message, state: FSMContext):
     if not message.from_user or not isAdmin(message.from_user.id):
+        return
+    if not message.text:
+        await message.answer("Введите язык: ru или en.")
         return
 
     language = message.text.strip().lower()

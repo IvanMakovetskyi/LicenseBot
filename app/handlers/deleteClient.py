@@ -12,8 +12,11 @@ router = Router()
 
 @router.callback_query(F.data == "admin_delete_client")
 async def showDeleteClients(callback: CallbackQuery):
-    if callback.from_user.id not in settings.ADMINS:
+    if not callback.from_user or callback.from_user.id not in settings.ADMINS:
         await callback.answer("У вас нет админ прав", show_alert=True)
+        return
+    if not callback.message:
+        await callback.answer()
         return
 
     clients = await clientService.getAllClients()
@@ -32,8 +35,11 @@ async def showDeleteClients(callback: CallbackQuery):
 
 @router.callback_query(F.data.startswith("delete_client_select:"))
 async def selectDeleteClient(callback: CallbackQuery):
-    if callback.from_user.id not in settings.ADMINS:
+    if not callback.from_user or callback.from_user.id not in settings.ADMINS:
         await callback.answer("У вас нет админ прав", show_alert=True)
+        return
+    if not callback.message:
+        await callback.answer()
         return
 
     clientId = int(callback.data.split(":")[1])
@@ -60,8 +66,11 @@ async def selectDeleteClient(callback: CallbackQuery):
 
 @router.callback_query(F.data.startswith("delete_client_confirm:"))
 async def confirmDeleteClient(callback: CallbackQuery):
-    if callback.from_user.id not in settings.ADMINS:
+    if not callback.from_user or callback.from_user.id not in settings.ADMINS:
         await callback.answer("У вас нет админ прав", show_alert=True)
+        return
+    if not callback.message:
+        await callback.answer()
         return
 
     clientId = int(callback.data.split(":")[1])
@@ -80,8 +89,11 @@ async def confirmDeleteClient(callback: CallbackQuery):
 
 @router.callback_query(F.data == "delete_client_cancel")
 async def cancelDeleteClient(callback: CallbackQuery):
-    if callback.from_user.id not in settings.ADMINS:
+    if not callback.from_user or callback.from_user.id not in settings.ADMINS:
         await callback.answer("У вас нет админ прав", show_alert=True)
+        return
+    if not callback.message:
+        await callback.answer()
         return
 
     await callback.message.edit_text("Удаление отменено")
