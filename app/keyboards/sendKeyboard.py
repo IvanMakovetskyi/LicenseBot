@@ -17,10 +17,21 @@ def clientKeyboard(clients) -> InlineKeyboardMarkup:
 def messageKeyboard(messageKeys: list[str]) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
 
+<<<<<<< Updated upstream
     for key in messageKeys:
         builder.button(
             text=getMessageLabel(key),
             callback_data=f"send_message:{key}"
+=======
+    for item in messages:
+        label = item.get("label") or item.get("key") or "Unnamed message"
+        if item.get("is_last"):
+            label = f"{label} (last)"
+
+        builder.button(
+            text=str(label),
+            callback_data=f"send_message:{item['key']}"
+>>>>>>> Stashed changes
         )
 
     builder.adjust(1)
