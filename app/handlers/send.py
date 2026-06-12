@@ -21,6 +21,19 @@ def isAdmin(userId: int) -> bool:
     return userId in settings.ADMINS
 
 
+def formatLastSent(client) -> str:
+    lastLabel = client["last_sent_message_label"] if "last_sent_message_label" in client else None
+    lastAt = client["last_sent_at"] if "last_sent_at" in client else None
+
+    if not lastLabel:
+        return "Последнее сообщение: —"
+
+    if lastAt:
+        return f"Последнее сообщение: {lastLabel} ({lastAt:%Y-%m-%d %H:%M})"
+
+    return f"Последнее сообщение: {lastLabel}"
+
+
 async def openSendInterface(
     message: Message,
     state: FSMContext,
@@ -65,6 +78,9 @@ async def adminSend(callback: CallbackQuery, state: FSMContext):
     if not callback.from_user or not isAdmin(callback.from_user.id):
         await callback.answer()
         return
+    if not callback.message:
+        await callback.answer()
+        return
 
     if callback.message.chat.type == "private":
         await openSendInterface(
@@ -91,15 +107,21 @@ async def adminSend(callback: CallbackQuery, state: FSMContext):
         language=client["language"] or "ru",
     )
 
-    messageKeys = getAvailableMessages(client["us_state"])
+    messages = await getAvailableMessages(
+        stateCode=client["us_state"],
+        language=client["language"] or "ru",
+        lastMessageKey=client["last_sent_message_key"] if "last_sent_message_key" in client else None,
+    )
 
     await state.set_state(AdminSendState.choosingMessage)
 
     await callback.message.answer(
         f"Клиент: {client['full_name']}\n"
-        f"Штат: {client['us_state']}\n\n"
+        f"Штат: {client['us_state']}\n"
+        f"Статус: {client['status']}\n"
+        f"{formatLastSent(client)}\n\n"
         f"Выберите сообщение:",
-        reply_markup=messageKeyboard(messageKeys),
+        reply_markup=messageKeyboard(messages),
     )
 
     await callback.answer()
@@ -111,6 +133,9 @@ async def adminSend(callback: CallbackQuery, state: FSMContext):
 )
 async def chooseClient(callback: CallbackQuery, state: FSMContext):
     if not callback.from_user or not isAdmin(callback.from_user.id):
+        await callback.answer()
+        return
+    if not callback.message:
         await callback.answer()
         return
 
@@ -129,15 +154,21 @@ async def chooseClient(callback: CallbackQuery, state: FSMContext):
         language=client["language"] or "ru",
     )
 
-    messageKeys = getAvailableMessages(client["us_state"])
+    messages = await getAvailableMessages(
+        stateCode=client["us_state"],
+        language=client["language"] or "ru",
+        lastMessageKey=client["last_sent_message_key"] if "last_sent_message_key" in client else None,
+    )
 
     await state.set_state(AdminSendState.choosingMessage)
 
     await callback.message.edit_text(
-        f"Client: {client['full_name']}\n"
-        f"State: {client['us_state']}\n\n"
-        f"Choose message:",
-        reply_markup=messageKeyboard(messageKeys),
+        f"Клиент: {client['full_name']}\n"
+        f"Штат: {client['us_state']}\n"
+        f"Статус: {client['status']}\n"
+        f"{formatLastSent(client)}\n\n"
+        f"Выберите сообщение:",
+        reply_markup=messageKeyboard(messages),
     )
     await callback.answer()
 
@@ -148,6 +179,9 @@ async def chooseClient(callback: CallbackQuery, state: FSMContext):
 )
 async def chooseMessage(callback: CallbackQuery, state: FSMContext):
     if not callback.from_user or not isAdmin(callback.from_user.id):
+        await callback.answer()
+        return
+    if not callback.message:
         await callback.answer()
         return
 
@@ -161,13 +195,15 @@ async def chooseMessage(callback: CallbackQuery, state: FSMContext):
     messageKey = callback.data.split(":")[1]
 
     language = data.get("language", "ru")
-    template = resolveMessage(messageKey, stateCode, language)
+    template = await resolveMessage(messageKey, stateCode, language)
 
     text = template["text"]
+    label = template["label"]
     placeholders = template.get("placeholders", [])
 
     await state.update_data(
         messageKey=messageKey,
+        messageLabel=label,
         templateText=text,
         placeholders=placeholders,
         placeholderIndex=0,
@@ -253,6 +289,9 @@ async def confirmSend(
     if not callback.from_user or not isAdmin(callback.from_user.id):
         await callback.answer()
         return
+    if not callback.message:
+        await callback.answer()
+        return
 
     data = await state.get_data()
 
@@ -261,30 +300,43 @@ async def confirmSend(
     finalText = data.get("finalText")
     clientName = data.get("clientName", "Unknown client")
     messageKey = data.get("messageKey")
+    messageLabel = data.get("messageLabel")
 
     if not clientChatId or not finalText:
         await callback.answer("Недостающие данные для отправки.", show_alert=True)
         await state.clear()
         return
 
-    await bot.send_message(chat_id=clientChatId, text=finalText)
+    try:
+        await bot.send_message(chat_id=clientChatId, text=finalText)
 
-    if messageKey == "payment":
-        await clientService.updateStatus(clientId, "in_progress")
+        if clientId and messageKey == "payment":
+            await clientService.updateStatus(clientId, "in_progress")
 
-    if messageKey == "congratulations":
-        await clientService.updateStatus(clientId, "done")
+        if clientId and messageKey == "congratulations":
+            await clientService.updateStatus(clientId, "done")
 
-    await callback.message.edit_text(
-        f"Сообщение отправлено:  {clientName}  ✅"
-    )
-    await state.clear()
-    await callback.answer()
+        if clientId and messageKey and messageLabel:
+            await clientService.updateLastSentMessage(clientId, messageKey, messageLabel)
+
+        await callback.message.edit_text(
+            f"Сообщение отправлено:  {clientName}  ✅"
+        )
+        await state.clear()
+        await callback.answer()
+    except Exception:
+        await callback.answer(
+            "Ошибка отправки. Попробуйте снова через несколько секунд.",
+            show_alert=True,
+        )
 
 
 @router.callback_query(F.data == "send_cancel")
 async def cancelSend(callback: CallbackQuery, state: FSMContext):
     if not callback.from_user or not isAdmin(callback.from_user.id):
+        await callback.answer()
+        return
+    if not callback.message:
         await callback.answer()
         return
 
