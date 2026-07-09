@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 import asyncio
-import json
 import logging
 from typing import Any, Optional
 
 import asyncpg
 
 from config import settings
+from database.seed import build_seed_rows
 
 _pool: Optional[asyncpg.Pool] = None
 _pool_lock = asyncio.Lock()
@@ -16,8 +16,6 @@ logger = logging.getLogger(__name__)
 _QUERY_RETRIES = 3
 _RETRY_DELAY_SECONDS = 0.25
 _ACQUIRE_TIMEOUT_SECONDS = 8
-_DEFAULT_LANGUAGE = "ru"
-_DEFAULT_STATE_CODE = "default"
 _TRANSIENT_DB_ERRORS = (
     asyncpg.PostgresConnectionError,
     asyncpg.InterfaceError,
@@ -53,101 +51,6 @@ async def close_pool() -> None:
     if _pool is not None:
         await _pool.close()
         _pool = None
-
-
-def _as_language_map(value: Any) -> dict[str, str]:
-    if isinstance(value, dict):
-        return {
-            str(lang): str(text)
-            for lang, text in value.items()
-            if text is not None
-        }
-
-    normalized = "" if value is None else str(value)
-    return {
-        "ru": normalized,
-        "en": normalized,
-    }
-
-
-def _build_template_rows() -> tuple[list[tuple[str, str, str, str, str, str]], list[tuple[str, str, int, str]]]:
-    # Local files remain only as seed source; runtime reads from DB.
-    from messages.messageMap import ADDITIONAL_MESSAGES, STATE_MESSAGE_MAP
-    from messages.user import MESSAGES
-
-    rows: list[tuple[str, str, str, str, str]] = []
-
-    for message_key, message_data in MESSAGES.items():
-        label_by_language = _as_language_map(message_data.get("label", ""))
-
-        if "states" in message_data:
-            state_map = message_data["states"]
-            for state_code, state_data in state_map.items():
-                text_by_language = _as_language_map(state_data.get("text", ""))
-                placeholders = state_data.get(
-                    "placeholders",
-                    message_data.get("placeholders", []),
-                )
-                placeholders_json = json.dumps(placeholders, ensure_ascii=False)
-
-                normalized_state = (
-                    _DEFAULT_STATE_CODE
-                    if state_code == _DEFAULT_STATE_CODE
-                    else str(state_code)
-                )
-
-                for language, text in text_by_language.items():
-                    label = (
-                        label_by_language.get(language)
-                        or label_by_language.get(_DEFAULT_LANGUAGE)
-                        or ""
-                    )
-                    rows.append(
-                        (
-                            message_key,
-                            normalized_state,
-                            language,
-                            label,
-                            text,
-                            placeholders_json,
-                        )
-                    )
-        else:
-            text_by_language = _as_language_map(message_data.get("text", ""))
-            placeholders = message_data.get("placeholders", [])
-            placeholders_json = json.dumps(placeholders, ensure_ascii=False)
-
-            for language, text in text_by_language.items():
-                label = (
-                    label_by_language.get(language)
-                    or label_by_language.get(_DEFAULT_LANGUAGE)
-                    or ""
-                )
-                rows.append(
-                    (
-                        message_key,
-                        _DEFAULT_STATE_CODE,
-                        language,
-                        label,
-                        text,
-                        placeholders_json,
-                    )
-                )
-
-    flow_rows: list[tuple[str, str, int, str]] = []
-    for state_code, message_keys in STATE_MESSAGE_MAP.items():
-        seen: set[str] = set()
-        ordered_keys = list(message_keys) + list(ADDITIONAL_MESSAGES)
-
-        for order, message_key in enumerate(ordered_keys, start=1):
-            if message_key in seen:
-                continue
-            seen.add(message_key)
-
-            category = "additional" if message_key in ADDITIONAL_MESSAGES else "workflow"
-            flow_rows.append((state_code, message_key, order, category))
-
-    return rows, flow_rows
 
 
 async def _migrate_cases_to_clients(conn: asyncpg.Connection) -> None:
@@ -283,9 +186,24 @@ async def _ensure_message_tables(conn: asyncpg.Connection) -> None:
         """
     )
 
+    # is_active lets admins deactivate a template/flow without deleting it.
+    # Runtime queries only use active rows; the admin/audit views see all.
+    await conn.execute(
+        """
+        ALTER TABLE message_templates
+        ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT TRUE
+        """
+    )
+    await conn.execute(
+        """
+        ALTER TABLE client_message_flows
+        ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT TRUE
+        """
+    )
+
 
 async def _seed_message_templates(conn: asyncpg.Connection) -> None:
-    template_rows, flow_rows = _build_template_rows()
+    template_rows, flow_rows = build_seed_rows()
 
     await conn.executemany(
         """
