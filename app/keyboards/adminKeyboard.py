@@ -5,6 +5,7 @@ adminKeyboard = InlineKeyboardMarkup(
         [InlineKeyboardButton(text="Отправить сообщение", callback_data="admin_send")],
         [InlineKeyboardButton(text="Список клиентов", callback_data="admin_clients")],
         [InlineKeyboardButton(text="Добавить клиента", callback_data="admin_create_client")],
-        [InlineKeyboardButton(text="Удалить клиента", callback_data="admin_delete_client")]   
+        [InlineKeyboardButton(text="Удалить клиента", callback_data="admin_delete_client")],
+        [InlineKeyboardButton(text="Сообщения", callback_data="admin_messages")]
     ]
 )

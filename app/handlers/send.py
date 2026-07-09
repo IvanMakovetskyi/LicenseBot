@@ -10,7 +10,11 @@ from keyboards.sendKeyboard import (
     messageKeyboard,
     confirmKeyboard,
 )
-from services.sendService import resolveMessage, getAvailableMessages
+from services.messageService import (
+    MESSAGE_NOT_CONFIGURED,
+    getAvailableMessages,
+    resolveMessage,
+)
 from services.clientService import clientService
 
 
@@ -196,6 +200,11 @@ async def chooseMessage(callback: CallbackQuery, state: FSMContext):
 
     language = data.get("language", "ru")
     template = await resolveMessage(messageKey, stateCode, language)
+
+    if template is None:
+        await callback.message.answer(MESSAGE_NOT_CONFIGURED)
+        await callback.answer()
+        return
 
     text = template["text"]
     label = template["label"]
